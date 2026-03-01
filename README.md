@@ -35,11 +35,11 @@ You'll need to have the following software installed on your machine:
 
 1.  Clone the repo
     ```sh
-    git clone https://github.com/anshu0027/timeline-generator.git
+    git clone https://github.com/anshu0027/project-timeline-generator
     ```
 2.  Navigate to the project directory
     ```sh
-    cd timeline-generator
+    cd project-timeline-generator
     ```
 3.  Install NPM packages
     ```sh
