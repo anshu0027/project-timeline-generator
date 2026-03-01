@@ -2,7 +2,9 @@
 
 import React, { useState, useEffect } from "react";
 import { ProjectData, Task, ViewMode, AIProvider } from "@/types";
-import { parseProjectDescription } from "@/lib/gemini";
+import { parseProjectDescription as parseWithGemini } from "@/lib/gemini";
+import { parseProjectDescription as parseWithOpenAI } from "@/lib/openai";
+import { parseProjectDescription as parseWithClaude } from "@/lib/claude";
 import SettingsMenu from "@/components/SettingsMenu";
 import GanttChart from "@/components/GanttChart";
 import NetworkGraph from "@/components/NetworkGraph";
@@ -59,34 +61,23 @@ export default function Home() {
       return;
     }
 
-    let apiKey = "";
-    if (aiProvider === "gemini") {
-      apiKey =
-        localStorage.getItem("gemini_api_key") ||
-        process.env.NEXT_PUBLIC_GEMINI_API_KEY ||
-        "";
-    } else {
-      apiKey = localStorage.getItem(`${aiProvider}_api_key`) || "";
-    }
-
-    if (!apiKey && aiProvider === "gemini") {
-      setError(
-        "Please provide your Gemini API key in settings or set NEXT_PUBLIC_GEMINI_API_KEY.",
-      );
-      return;
-    }
-
-    if (aiProvider !== "gemini") {
-      setError(
-        `${aiProvider.toUpperCase()} integration is coming soon. Please use Gemini for now.`,
-      );
-      return;
-    }
-
     setIsLoading(true);
     setError(null);
     try {
-      const result = await parseProjectDescription(inputText, apiKey);
+      let result;
+      switch (aiProvider) {
+        case "gemini":
+          result = await parseWithGemini(inputText);
+          break;
+        case "openai":
+          result = await parseWithOpenAI(inputText);
+          break;
+        case "claude":
+          result = await parseWithClaude(inputText);
+          break;
+        default:
+          throw new Error("Invalid AI provider selected");
+      }
       setProject(result);
       setSelectedTask(null);
     } catch (err: any) {
@@ -265,7 +256,7 @@ export default function Home() {
                     <span className="text-[11px] font-black uppercase tracking-[0.3em] text-gray-400">
                       {f}
                     </span>
-                    <div className="w-12 h-1 bg-gray-200 rounded-full" />
+                    <div className="w-12 h-12 bg-gray-200 rounded-full" />
                   </div>
                 ))}
               </div>
@@ -449,7 +440,7 @@ export default function Home() {
                                     whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
                                     onClick={() => setSelectedTask(dep || null)}
-                                    className="px-6 py-3 bg-gray-50 hover:bg-white hover:border-indigo-400 hover:text-indigo-700 transition-all rounded-[20px] text-[11px] font-black uppercase tracking-widest text-gray-500 border border-gray-100 flex items-center gap-3 shadow-sm"
+                                    className="px-6 py-3 bg-gray-50 hover:bg-white hover:border-indigo-400 hover:text-indigo-700 transition-all rounded-[20px] text-[11px] font-black uppercase tracking-widest text-gray-500 border border-gray-100 flex items-center gap-3 shadow-.env.local"
                                   >
                                     <div className="w-2.5 h-2.5 bg-gray-200 rounded-full" />
                                     {dep?.name || depId}

@@ -1,4 +1,4 @@
-import { GoogleGenAI, Type } from "@google/genai";
+import Anthropic from "@anthropic-ai/sdk";
 import { ProjectData } from "@/types";
 
 const SYSTEM_INSTRUCTION = `
@@ -55,79 +55,33 @@ No commentary.
 No markdown.
 `;
 
-const RESPONSE_SCHEMA = {
-  type: Type.OBJECT,
-  properties: {
-    name: { type: Type.STRING },
-    summary: { type: Type.STRING },
-    tasks: {
-      type: Type.ARRAY,
-      items: {
-        type: Type.OBJECT,
-        properties: {
-          id: { type: Type.STRING },
-          name: { type: Type.STRING },
-          durationDays: { type: Type.NUMBER },
-          startDate: { type: Type.STRING },
-          endDate: { type: Type.STRING },
-          dependencies: {
-            type: Type.ARRAY,
-            items: { type: Type.STRING },
-          },
-          phase: { type: Type.STRING },
-          type: { type: Type.STRING, enum: ["task", "milestone"] },
-          isCriticalPath: { type: Type.BOOLEAN },
-        },
-        required: [
-          "id",
-          "name",
-          "durationDays",
-          "startDate",
-          "endDate",
-          "dependencies",
-          "type",
-        ],
-      },
-    },
-    assumptions: {
-      type: Type.ARRAY,
-      items: { type: Type.STRING },
-    },
-    risks: {
-      type: Type.ARRAY,
-      items: { type: Type.STRING },
-    },
-    criticalPath: {
-      type: Type.ARRAY,
-      items: { type: Type.STRING },
-    },
-  },
-  required: [
-    "name",
-    "summary",
-    "tasks",
-    "assumptions",
-    "risks",
-    "criticalPath",
-  ],
-};
-
 export async function parseProjectDescription(
   description: string,
 ): Promise<ProjectData> {
-  const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY || "" });
-
-  const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
-    contents: `Parse this project description into a structured timeline: \n\n${description}`,
-    config: {
-      systemInstruction: SYSTEM_INSTRUCTION,
-      responseMimeType: "application/json",
-      responseSchema: RESPONSE_SCHEMA,
-    },
+  const anthropic = new Anthropic({
+    apiKey: process.env.CLAUDE_API_KEY,
   });
 
-  const text = response.text;
+  const response = await anthropic.messages.create({
+    model: "claude-opus-4-6",
+    system: SYSTEM_INSTRUCTION,
+    max_tokens: 4096,
+    messages: [
+      {
+        role: "user",
+        content: `Parse this project description into a structured timeline:
+
+${description}`,
+      },
+    ],
+  });
+
+  // Safely extract text from the content blocks
+  const text = response.content
+    .filter((block): block is Anthropic.TextBlock => block.type === "text")
+    .map((block) => block.text)
+    .join("");
+
   if (!text) throw new Error("No response from AI");
 
   return JSON.parse(text.trim()) as ProjectData;

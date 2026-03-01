@@ -13,16 +13,6 @@ const SettingsMenu: React.FC<Props> = ({
   onProviderChange,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [otherKeys, setOtherKeys] = useState({
-    openai:
-      typeof window !== "undefined"
-        ? localStorage.getItem("openai_api_key") || ""
-        : "",
-    claude:
-      typeof window !== "undefined"
-        ? localStorage.getItem("claude_api_key") || ""
-        : "",
-  });
 
   const providers = [
     {
@@ -44,11 +34,6 @@ const SettingsMenu: React.FC<Props> = ({
       icon: "🎨",
     },
   ];
-
-  const handleKeyChange = (provider: "openai" | "claude", val: string) => {
-    setOtherKeys((prev) => ({ ...prev, [provider]: val }));
-    localStorage.setItem(`${provider}_api_key`, val);
-  };
 
   return (
     <div className="relative">
@@ -141,22 +126,22 @@ const SettingsMenu: React.FC<Props> = ({
                     <div className="px-3 pb-3 pt-1 space-y-2">
                       <div className="h-px bg-indigo-100 w-full mb-3"></div>
                       <label className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em]">
-                        API Key Entry
+                        API Key Configuration
                       </label>
-                      <input
-                        type="password"
-                        placeholder={`Paste your key for ${p.name}`}
-                        className="w-full text-xs p-2.5 border border-indigo-100 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 outline-none transition-all"
-                        value={otherKeys[p.id as "openai" | "claude"]}
-                        onChange={(e) =>
-                          handleKeyChange(
-                            p.id as "openai" | "claude",
-                            e.target.value,
-                          )
-                        }
-                      />
+                      <p className="text-xs text-gray-600 leading-tight">
+                        To use {p.name}, please add your API key to a{" "}
+                        <code className="font-mono bg-gray-100 p-1 rounded">
+                          .env.local
+                        </code>{" "}
+                        file in the root of your project.
+                      </p>
                       <p className="text-[9px] text-gray-400 leading-tight">
-                        Key is stored in browser localStorage only.
+                        Example:{" "}
+                        <code className="font-mono">
+                          {p.id === "openai"
+                            ? "OPENAI_API_KEY=your_key_here"
+                            : "CLAUDE_API_KEY=your_key_here"}
+                        </code>
                       </p>
                     </div>
                   )}
